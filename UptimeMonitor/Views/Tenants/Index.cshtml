@@ -34,7 +34,7 @@
                     <td>@tenant.Name</td>
                     <td>@tenant.Url</td>
                     <td>@tenant.Status</td>
-                    <td>@tenant.CurrentUptime %</td>
+                    <td>@(tenant.CurrentUptime.HasValue ? tenant.CurrentUptime.Value.ToString("0.###") + " %" : "Ej tillgänglig ännu")</td>
                     <td>@tenant.SlaTarget %</td>
                     <td>@tenant.UptimeRobotId</td>
                 </tr>

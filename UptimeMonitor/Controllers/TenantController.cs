@@ -14,8 +14,26 @@ public class TenantsController : Controller
         _uptimeService = uptimeService;
     }
 
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
+        foreach (var tenant in _tenants)
+        {
+            if (string.IsNullOrWhiteSpace(tenant.UptimeRobotId))
+                continue;
+
+            var monitorResult = await _uptimeService.GetMonitorAsync(tenant.UptimeRobotId);
+
+            if (monitorResult.Success)
+            {
+                tenant.Status = monitorResult.Status;
+                tenant.CurrentUptime = monitorResult.Uptime;
+            }
+            else
+            {
+                tenant.Status = "Error";
+            }
+        }
+
         return View(_tenants);
     }
 
@@ -41,8 +59,7 @@ public class TenantsController : Controller
 
         tenant.UptimeRobotId = result.MonitorId;
         tenant.Status = "Created";
-        tenant.CurrentUptime = 0;
-
+        tenant.CurrentUptime = null;
         tenant.Id = _tenants.Count == 0 ? 1 : _tenants.Max(t => t.Id) + 1;
 
         _tenants.Add(tenant);

@@ -18,6 +18,6 @@ namespace UptimeMonitor.Models
 
         public string? UptimeRobotId { get; set; }
         public string Status { get; set; } = "Unknown";
-        public double CurrentUptime { get; set; }
+        public double? CurrentUptime { get; set; }
     }
 }
