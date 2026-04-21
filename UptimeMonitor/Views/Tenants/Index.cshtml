@@ -1,0 +1,45 @@
+﻿@model List<UptimeMonitor.Models.Tenant>
+
+<div class="card">
+    <h1>Tenant Dashboard</h1>
+    <p>Här visas alla tenants som lagts till i systemet.</p>
+
+    <p>
+        <a class="btn" asp-controller="Tenants" asp-action="Create">Lägg till tenant</a>
+    </p>
+
+    @if (!Model.Any())
+    {
+        <p>Inga tenants är tillagda ännu.</p>
+    }
+    else
+    {
+        <table>
+            <thead>
+            <tr>
+                <th>Id</th>
+                <th>Namn</th>
+                <th>URL</th>
+                <th>Status</th>
+                <th>Uptime</th>
+                <th>SLA</th>
+                <th>UptimeRobot ID</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var tenant in Model)
+            {
+                <tr>
+                    <td>@tenant.Id</td>
+                    <td>@tenant.Name</td>
+                    <td>@tenant.Url</td>
+                    <td>@tenant.Status</td>
+                    <td>@tenant.CurrentUptime %</td>
+                    <td>@tenant.SlaTarget %</td>
+                    <td>@tenant.UptimeRobotId</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+</div>
