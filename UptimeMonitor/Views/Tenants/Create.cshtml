@@ -1,20 +1,22 @@
 ﻿@model UptimeMonitor.Models.Tenant
 
-<div class="card">
+<div class="form-card">
     <h1>Lägg till tenant</h1>
-    <p>När en tenant skapas skickas URL:en till UptimeRobot för monitorering.</p>
+    <p class="dashboard-subtitle">
+        Ange tenantens namn och URL till landningssidan som ska övervakas av UptimeRobot.
+    </p>
 
     <div asp-validation-summary="All"></div>
 
     <form asp-action="Create" method="post">
         <div class="form-group">
             <label asp-for="Name">Namn</label>
-            <input asp-for="Name" />
+            <input asp-for="Name" placeholder="Exempel: Youtube" />
         </div>
 
         <div class="form-group">
             <label asp-for="Url">URL</label>
-            <input asp-for="Url" placeholder="https://example.com" />
+            <input asp-for="Url" placeholder="https://www.example.com" />
         </div>
 
         <div class="form-group">
@@ -22,6 +24,6 @@
             <input asp-for="SlaTarget" />
         </div>
 
-        <button class="btn" type="submit">Skapa tenant</button>
+        <button class="btn-primary" type="submit">Skapa tenant</button>
     </form>
 </div>

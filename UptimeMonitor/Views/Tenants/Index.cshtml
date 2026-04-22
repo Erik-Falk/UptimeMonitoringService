@@ -1,45 +1,142 @@
 ﻿@model List<UptimeMonitor.Models.Tenant>
 
-<div class="card">
-    <h1>Tenant Dashboard</h1>
-    <p>Här visas alla tenants som lagts till i systemet.</p>
+@{
+    var totalTenants = Model.Count;
 
-    <p>
-        <a class="btn" asp-controller="Tenants" asp-action="Create">Lägg till tenant</a>
-    </p>
+    var upCount = Model.Count(t =>
+        t.Status == "Up");
 
-    @if (!Model.Any())
+    var downCount = Model.Count(t =>
+        t.Status == "Down" || t.Status == "Seems down" || t.Status == "Error");
+
+    var avgUptime = Model.Any(t => t.CurrentUptime.HasValue)
+        ? Model.Where(t => t.CurrentUptime.HasValue).Average(t => t.CurrentUptime!.Value)
+        : 0;
+
+    string GetTenantCardClass(UptimeMonitor.Models.Tenant tenant)
     {
-        <p>Inga tenants är tillagda ännu.</p>
+        if (tenant.Status == "Down" || tenant.Status == "Seems down" || tenant.Status == "Error")
+            return "tenant-card tenant-card--danger";
+
+        if (tenant.CurrentUptime.HasValue && tenant.CurrentUptime.Value < tenant.SlaTarget)
+            return "tenant-card tenant-card--warning";
+
+        return "tenant-card tenant-card--ok";
     }
-    else
+
+    string GetStatusBadgeClass(UptimeMonitor.Models.Tenant tenant)
     {
-        <table>
-            <thead>
-            <tr>
-                <th>Id</th>
-                <th>Namn</th>
-                <th>URL</th>
-                <th>Status</th>
-                <th>Uptime</th>
-                <th>SLA</th>
-                <th>UptimeRobot ID</th>
-            </tr>
-            </thead>
-            <tbody>
-            @foreach (var tenant in Model)
-            {
-                <tr>
-                    <td>@tenant.Id</td>
-                    <td>@tenant.Name</td>
-                    <td>@tenant.Url</td>
-                    <td>@tenant.Status</td>
-                    <td>@(tenant.CurrentUptime.HasValue ? tenant.CurrentUptime.Value.ToString("0.###") + " %" : "Ej tillgänglig ännu")</td>
-                    <td>@tenant.SlaTarget %</td>
-                    <td>@tenant.UptimeRobotId</td>
-                </tr>
-            }
-            </tbody>
-        </table>
+        if (tenant.Status == "Down" || tenant.Status == "Seems down" || tenant.Status == "Error")
+            return "status-badge status-badge--danger";
+
+        if (tenant.CurrentUptime.HasValue && tenant.CurrentUptime.Value < tenant.SlaTarget)
+            return "status-badge status-badge--warning";
+
+        return "status-badge status-badge--ok";
     }
+}
+
+<div class="dashboard-page">
+
+    <div class="dashboard-header">
+        <div>
+            <h1 class="dashboard-title">Tenant Dashboard</h1>
+            <p class="dashboard-subtitle">
+                Översikt över tenants och deras övervakade landningssidor.
+            </p>
+        </div>
+
+        <div>
+            <a class="btn-primary" asp-controller="Tenants" asp-action="Create">+ Lägg till tenant</a>
+        </div>
+    </div>
+
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="summary-label">Totalt antal tenants</div>
+            <div class="summary-value">@totalTenants</div>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-label">Up</div>
+            <div class="summary-value summary-value--ok">@upCount</div>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-label">Incidenter</div>
+            <div class="summary-value summary-value--danger">@downCount</div>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-label">Genomsnittlig uptime</div>
+            <div class="summary-value summary-value--warning">@avgUptime.ToString("0.###")%</div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header">
+            <h2>Fleet Matrix</h2>
+            <span>@totalTenants tenants</span>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <p>Inga tenants är tillagda ännu.</p>
+                <a class="btn-primary" asp-controller="Tenants" asp-action="Create">Skapa första tenant</a>
+            </div>
+        }
+        else
+        {
+            <div class="tenant-grid">
+                @foreach (var tenant in Model)
+                {
+                    <div class="@GetTenantCardClass(tenant)">
+                        <div class="tenant-card-top">
+                            <div>
+                                <h3>@tenant.Name</h3>
+                                <p class="tenant-url">@tenant.Url</p>
+                            </div>
+
+                            <span class="@GetStatusBadgeClass(tenant)">
+                                @tenant.Status
+                            </span>
+                        </div>
+
+                        <div class="tenant-metrics">
+                            <div class="tenant-metric">
+                                <span class="tenant-metric-label">Uptime</span>
+                                <span class="tenant-metric-value">
+                                    @(tenant.CurrentUptime.HasValue
+                                        ? tenant.CurrentUptime.Value.ToString("0.###") + "%"
+                                        : "Ej tillgänglig")
+                                </span>
+                            </div>
+
+                            <div class="tenant-metric">
+                                <span class="tenant-metric-label">SLA</span>
+                                <span class="tenant-metric-value">@tenant.SlaTarget%</span>
+                            </div>
+
+                            <div class="tenant-metric">
+                                <span class="tenant-metric-label">Monitor ID</span>
+                                <span class="tenant-metric-value">@tenant.UptimeRobotId</span>
+                            </div>
+                        </div>
+
+                        <div class="tenant-footer">
+                            @if (tenant.CurrentUptime.HasValue && tenant.CurrentUptime.Value < tenant.SlaTarget)
+                            {
+                                <span class="tenant-alert">Under SLA</span>
+                            }
+                            else
+                            {
+                                <span class="tenant-ok">Inom SLA</span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
 </div>
