@@ -37,6 +37,12 @@
 }
 
 <div class="dashboard-page">
+    @if (ViewBag.ApiWarning is string apiWarning && !string.IsNullOrWhiteSpace(apiWarning))
+    {
+        <div class="alert alert-warning" role="alert">
+            Kunde inte uppdatera status från UptimeRobot just nu. Visar senast kända data.
+        </div>
+    }
 
     <div class="dashboard-header">
         <div>

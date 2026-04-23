@@ -7,34 +7,45 @@ namespace UptimeMonitor.Controllers;
 public class TenantsController : Controller
 {
     private readonly UptimeRobotService _uptimeService;
-    private static readonly List<Tenant> _tenants = new();
+    private readonly TenantStore _tenantStore;
 
-    public TenantsController(UptimeRobotService uptimeService)
+    public TenantsController(UptimeRobotService uptimeService, TenantStore tenantStore)
     {
         _uptimeService = uptimeService;
+        _tenantStore = tenantStore;
     }
 
     public async Task<IActionResult> Index()
     {
-        foreach (var tenant in _tenants)
+        var tenants = _tenantStore.GetAll();
+        var monitorResult = await _uptimeService.GetAllMonitorsAsync();
+
+        if (!monitorResult.Success)
+        {
+            ViewBag.ApiWarning = monitorResult.ErrorMessage;
+            return View(tenants);
+        }
+
+        var monitorLookup = monitorResult.Monitors
+            .Where(m => !string.IsNullOrWhiteSpace(m.UptimeRobotId))
+            .ToDictionary(m => m.UptimeRobotId!, m => m);
+
+        foreach (var tenant in tenants)
         {
             if (string.IsNullOrWhiteSpace(tenant.UptimeRobotId))
                 continue;
 
-            var monitorResult = await _uptimeService.GetMonitorAsync(tenant.UptimeRobotId);
+            if (!monitorLookup.TryGetValue(tenant.UptimeRobotId, out var monitor))
+                continue;
 
-            if (monitorResult.Success)
-            {
-                tenant.Status = monitorResult.Status;
-                tenant.CurrentUptime = monitorResult.Uptime;
-            }
-            else
-            {
-                tenant.Status = "Error";
-            }
+            tenant.Name = monitor.Name;
+            tenant.Url = monitor.Url;
+            tenant.Status = monitor.Status;
+            tenant.CurrentUptime = monitor.CurrentUptime;
+            _tenantStore.UpdateMonitorDetails(tenant);
         }
 
-        return View(_tenants);
+        return View(tenants);
     }
 
     public IActionResult Create()
@@ -60,9 +71,9 @@ public class TenantsController : Controller
         tenant.UptimeRobotId = result.MonitorId;
         tenant.Status = "Created";
         tenant.CurrentUptime = null;
-        tenant.Id = _tenants.Count == 0 ? 1 : _tenants.Max(t => t.Id) + 1;
+        tenant.Id = _tenantStore.GetNextId();
 
-        _tenants.Add(tenant);
+        _tenantStore.Add(tenant);
 
         return RedirectToAction(nameof(Index));
     }

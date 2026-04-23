@@ -177,6 +177,85 @@ public class UptimeRobotService
         }
     }
 
+    public async Task<MonitorListResult> GetAllMonitorsAsync()
+    {
+        var apiKey = _configuration["UptimeRobot:ApiKey"];
+
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            return new MonitorListResult
+            {
+                Success = false,
+                ErrorMessage = "UptimeRobot API key saknas."
+            };
+        }
+
+        var content = new FormUrlEncodedContent(new[]
+        {
+            new KeyValuePair<string, string>("api_key", apiKey),
+            new KeyValuePair<string, string>("format", "json"),
+            new KeyValuePair<string, string>("custom_uptime_ratios", "30")
+        });
+
+        var response = await _httpClient.PostAsync("https://api.uptimerobot.com/v2/getMonitors", content);
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return new MonitorListResult
+            {
+                Success = false,
+                ErrorMessage = $"HTTP {(int)response.StatusCode}: {responseBody}"
+            };
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(responseBody);
+            var root = doc.RootElement;
+
+            if (!root.TryGetProperty("stat", out var stat) || stat.GetString() != "ok")
+            {
+                return new MonitorListResult
+                {
+                    Success = false,
+                    ErrorMessage = responseBody
+                };
+            }
+
+            var importedTenants = new List<Tenant>();
+            var nextId = 1;
+
+            foreach (var monitor in root.GetProperty("monitors").EnumerateArray())
+            {
+                importedTenants.Add(new Tenant
+                {
+                    Id = nextId++,
+                    Name = monitor.GetProperty("friendly_name").GetString() ?? "Namnlös monitor",
+                    Url = monitor.TryGetProperty("url", out var urlProp) ? urlProp.GetString() ?? string.Empty : string.Empty,
+                    SlaTarget = 99.9, // Måste ändras, kan inte vara fast (Ta bort kanske?)
+                    UptimeRobotId = monitor.GetProperty("id").ToString(),
+                    Status = MapStatus(monitor.GetProperty("status").GetInt32()),
+                    CurrentUptime = ParseUptime(monitor)
+                });
+            }
+
+            return new MonitorListResult
+            {
+                Success = true,
+                Monitors = importedTenants
+            };
+        }
+        catch
+        {
+            return new MonitorListResult
+            {
+                Success = false,
+                ErrorMessage = "Kunde inte tolka monitor-listan från UptimeRobot."
+            };
+        }
+    }
+
     private static string MapStatus(int statusCode)
     {
         return statusCode switch
@@ -188,5 +267,24 @@ public class UptimeRobotService
             9 => "Down",
             _ => "Unknown"
         };
+    }
+
+    private static double? ParseUptime(JsonElement monitor)
+    {
+        if (!monitor.TryGetProperty("custom_uptime_ratio", out var uptimeProp))
+            return null;
+
+        var uptimeString = uptimeProp.GetString();
+
+        if (double.TryParse(
+                uptimeString,
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var parsedUptime))
+        {
+            return parsedUptime;
+        }
+
+        return null;
     }
 }
