@@ -15,7 +15,6 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-// Om du får problem med https lokalt kan du kommentera bort raden tillfälligt
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();

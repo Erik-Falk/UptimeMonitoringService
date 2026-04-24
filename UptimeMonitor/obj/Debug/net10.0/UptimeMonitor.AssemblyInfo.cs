@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("UptimeMonitor")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+85a6cc6d7a2b2c2b47a27eee01ae1906c20fea94")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+72e5e546d3c508e46f2e9bc600bfecd13daa3afb")]
 [assembly: System.Reflection.AssemblyProductAttribute("UptimeMonitor")]
 [assembly: System.Reflection.AssemblyTitleAttribute("UptimeMonitor")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

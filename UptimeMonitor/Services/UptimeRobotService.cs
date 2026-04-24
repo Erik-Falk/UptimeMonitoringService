@@ -16,9 +16,8 @@ public class UptimeRobotService
 
     public async Task<CreateMonitorResult> CreateMonitorAsync(string name, string url)
     {
-        var apiKey = _configuration["UptimeRobot:ApiKey"];
-
-        if (string.IsNullOrWhiteSpace(apiKey))
+        var apiKey = GetApiKey();
+        if (apiKey == null)
         {
             return new CreateMonitorResult
             {
@@ -83,9 +82,8 @@ public class UptimeRobotService
 
     public async Task<MonitorStatusResult> GetMonitorAsync(string monitorId)
     {
-        var apiKey = _configuration["UptimeRobot:ApiKey"];
-
-        if (string.IsNullOrWhiteSpace(apiKey))
+        var apiKey = GetApiKey();
+        if (apiKey == null)
         {
             return new MonitorStatusResult
             {
@@ -143,22 +141,7 @@ public class UptimeRobotService
 
             var statusCode = monitor.GetProperty("status").GetInt32();
             var statusText = MapStatus(statusCode);
-
-            double? uptime = null;
-
-            if (monitor.TryGetProperty("custom_uptime_ratio", out var uptimeProp))
-            {
-                var uptimeString = uptimeProp.GetString();
-
-                if (double.TryParse(
-                        uptimeString,
-                        System.Globalization.NumberStyles.Any,
-                        System.Globalization.CultureInfo.InvariantCulture,
-                        out var parsedUptime))
-                {
-                    uptime = parsedUptime;
-                }
-            }
+            var uptime = ParseUptime(monitor);
 
             return new MonitorStatusResult
             {
@@ -179,9 +162,8 @@ public class UptimeRobotService
 
     public async Task<MonitorListResult> GetAllMonitorsAsync()
     {
-        var apiKey = _configuration["UptimeRobot:ApiKey"];
-
-        if (string.IsNullOrWhiteSpace(apiKey))
+        var apiKey = GetApiKey();
+        if (apiKey == null)
         {
             return new MonitorListResult
             {
@@ -267,6 +249,12 @@ public class UptimeRobotService
             9 => "Down",
             _ => "Unknown"
         };
+    }
+
+    private string? GetApiKey()
+    {
+        var apiKey = _configuration["UptimeRobot:ApiKey"];
+        return string.IsNullOrWhiteSpace(apiKey) ? null : apiKey;
     }
 
     private static double? ParseUptime(JsonElement monitor)

@@ -19,5 +19,19 @@ namespace UptimeMonitor.Models
         public string? UptimeRobotId { get; set; }
         public string Status { get; set; } = "Unknown";
         public double? CurrentUptime { get; set; }
+
+        public Tenant Clone()
+        {
+            return new Tenant
+            {
+                Id = Id,
+                Name = Name,
+                Url = Url,
+                SlaTarget = SlaTarget,
+                UptimeRobotId = UptimeRobotId,
+                Status = Status,
+                CurrentUptime = CurrentUptime
+            };
+        }
     }
 }
